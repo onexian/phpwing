@@ -11,9 +11,8 @@ namespace lib;
 
 class Model
 {
-
     protected $db = 'Mysql';     // 需要链接的数据库
-    protected $conn = 'master';  // 使用那个配置
+    protected $config = 'master';  // 使用那个配置
     protected $pk = 'id';        // 当前链接表的主键
     protected $db_tablename;     // 当前访问的表名
     protected $db_conn;          // 当前实例的库
@@ -21,6 +20,7 @@ class Model
     private $where;            // 当前查询的 where 语句
     private $field;            // 当前查询字段
     private $order;            // 当前查询排序
+    private $group;            // 当前分组字段
     private $limit;
 
     public function __construct()
@@ -28,16 +28,16 @@ class Model
         $this->conn()->setTable();
     }
 
-    public function conn($model = '')
+    private function conn($model = '')
     {
         $model = $model ? ucfirst($model) : ucfirst($this->db);
 
         switch ($model) {
             case 'Mysql':
-                $connect = new library\Mysql();
+                $connect = new library\Mysql($this->config);
                 break;
             case 'Pgsql':
-                $connect = new library\Pgsql();
+                $connect = new library\Pgsql($this->config);
                 break;
         }
 
@@ -45,8 +45,11 @@ class Model
         return $this;
     }
 
-    public function setTable()
+    public function setTable($db_tablename = null)
     {
+
+        $this->db_tablename = $db_tablename ?? $this->db_tablename;
+
         if (!$this->db_conn || !$this->db_tablename) {
             $msg = '模型没有实例或没有设置操作的数据表';
             Debug::error($msg);
@@ -93,7 +96,7 @@ class Model
         return $this;
     }
 
-    public function field($field = null)
+    public function field(array $field = null)
     {
         $this->field = $field;
         return $this;
@@ -102,6 +105,12 @@ class Model
     public function order($order)
     {
         $this->order = $order;
+        return $this;
+    }
+
+    public function group($group)
+    {
+        $this->group = $group;
         return $this;
     }
 
@@ -127,7 +136,9 @@ class Model
 
     public function select($params = [])
     {
-        return $this->db_conn->select($this->field, $this->where, $params, $this->order, $this->limit);
+        $result = $this->db_conn->select($this->field, $this->where, $params, $this->order, $this->limit, $this->group);
+        $this->field = null;$this->where = null;$this->order = null;$this->limit = null;$this->group= null;
+        return $result;
     }
 
     /**
@@ -144,12 +155,40 @@ class Model
     /**
      * 更新数据
      *
-     * @param array $data 数据数组
+     * @param array $data
      * @return bool|int 受影响行数
+     * @throws \Exception
      */
     public function update(array $data)
     {
-        return $this->db_conn->update($data, $this->where);
+        if($this->where === null){
+            // 没设置更新条件 不更新
+            $msg = '请设置更新条件!';
+            Debug::debug($msg);
+            if (Debug::check()) throw new \Exception($msg);
+            return false;
+        }
+
+        $result = $this->db_conn->update($data, $this->where);
+        $this->where = null;
+        return $result;
     }
 
+    public function delete($where, $limit = 0)
+    {
+        if($this->where){
+            $where = $this->where;
+        }
+        if($this->limit){
+            $limit = $this->limit;
+        }
+        $result = $this->db_conn->delete($where, $limit);
+        $this->where = null;$this->limit = null;
+        return $result;
+    }
+
+    public function insertId()
+    {
+        return $this->db_conn->insertId();
+    }
 }
