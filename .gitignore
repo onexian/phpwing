@@ -1,1 +1,6 @@
-/.idea
+.git-a
+.idea
+runtime
+vendor
+composer.lock
+shell
