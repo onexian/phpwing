@@ -56,6 +56,28 @@ if (!function_exists('request')) {
     }
 }
 
+if (!function_exists('response')) {
+    /**
+     * 获取请求类对象
+     * @return \wing\Response
+     */
+    function response()
+    {
+        return wing('response');
+    }
+}
+
+if (!function_exists('view')) {
+    /**
+     * 获取模板类对象
+     * @return \wing\View
+     */
+    function view()
+    {
+        return wing('view');
+    }
+}
+
 if (!function_exists('input')) {
     /**
      * 获取输入数据 支持默认值和过滤
@@ -66,7 +88,7 @@ if (!function_exists('input')) {
      */
     function input(string $key = '', $default = null, $filter = '')
     {
-        return request()::getInput($key, $default, $filter);
+        return request()->getInput($key, $default, $filter);
     }
 }
 
@@ -80,7 +102,7 @@ if (!function_exists('json')) {
      */
     function json($data = [], $code = 200, $header = [], $options = [])
     {
-        return wing('response')::code($code)->send($data, 'json', $header, $options);
+        return response()->code($code)->send($data, 'json', $header, $options);
     }
 }
 
@@ -88,7 +110,7 @@ if (!function_exists('lib')) {
     /**
      * lib 目录的操作类实例化
      * @param string $class
-     * @return string|\wing\facade\LibFactory
+     * @return string|\wing\lib\Cookie|\wing\lib\File|\wing\lib\Log|\wing\lib\Route
      */
     function lib(string $class)
     {
@@ -104,7 +126,7 @@ if (!function_exists('wing')) {
     /**
      * wing 目录的操作类实例化
      * @param string $class
-     * @return string|\wing\facade\WingFactory
+     * @return string|\wing\Response|\wing\Request|\wing\View
      */
     function wing(string $class)
     {
@@ -113,5 +135,17 @@ if (!function_exists('wing')) {
         }catch (\Exception $e){
             exit('实例化类错误');
         }
+    }
+}
+
+if (!function_exists('is_debug')) {
+    /**
+     * 是否是测试模式
+     *
+     * @return bool
+     */
+    function is_debug()
+    {
+        return defined('DEBUG') ??  false;
     }
 }

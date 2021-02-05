@@ -26,6 +26,8 @@ class Mysql
     public $sql;             // 当前执行的 SQL 语句
     public $late_time = 3;   // 查询多少秒为慢查询
 
+    private $runSqlArray = [];
+
     public function getconn()
     {
         // 连接数据库
@@ -40,8 +42,8 @@ class Mysql
         if (!$this->db_conn) {
 
             $msg = 'MYSQL数据库连接失败 mysqli_connect_errno：' . mysqli_connect_errno() . '；mysqli_connect_error：' . mysqli_connect_error();
-            Log::save('error', $msg, __FILE__, __LINE__);
-            die($msg);
+            Log::error($msg);
+            return false;
         }
 
         // 设置字符集
@@ -56,16 +58,16 @@ class Mysql
         if (!$char) {
 
             $msg = 'charset设置错误，请输入正确的字符集名称 mysqli_errno：' . mysqli_errno($this->db_conn) . '；mysqli_error：' . mysqli_error($this->db_conn);
-            Log::save('error', $msg, __FILE__, __LINE__);
-            die($msg);
+            Log::error($msg);
+            return false;
         }
 
         $db = mysqli_select_db($this->db_conn, $this->db_name);
         if (!$db) {
 
             $msg = '未找到数据库，请输入正确的数据库名称 mysqli_errno：' . mysqli_errno($this->db_conn) . '；mysqli_error：' . mysqli_error($this->db_conn);
-            Log::save('error', $msg, __FILE__, __LINE__);
-            die($msg);
+            Log::error($msg);
+            return false;
         }
 
         return $this->db_conn;
@@ -79,7 +81,7 @@ class Mysql
 
         $config = $config[$this->connection] ?? [];
         if (empty($config)) {
-            Log::save('error', "MYSQL[{$this->connection}]配置不存在，请在config/database" . EXT . '添加配置！', __FILE__, __LINE__);
+            Log::error("MYSQL[{$this->connection}]配置不存在，请在config/database" . EXT . '添加配置！');
             return false;
         }
 
@@ -311,7 +313,7 @@ class Mysql
         $t = round($eTime - $sTime, 3);
 
         if (!$result) {
-            Log::save('error', "SQL：{$sql}(error：" . mysqli_error($this->db_conn) . ")");
+            Log::error("SQL：{$sql}(error：" . mysqli_error($this->db_conn) . ")");
             return false;
         }
 
@@ -321,9 +323,9 @@ class Mysql
         // 记录 sql
         if ($t > $this->late_time) {
             //慢查询，保存到 debug 日志文件
-            Log::save('debug', "SQL: {$this->sql}(OK:{$t})");
+            Log::debug("{$this->sql}(OK:{$t})");
         }
-        Log::save('info', "SQL: {$this->sql}(OK:{$t})");
+        $this->runSqlArray[] = "{$this->sql}(OK:{$t})";
 
         if ($this->getSqlType($sql) == 'select') {
             $rows = [];
@@ -360,6 +362,8 @@ class Mysql
 
     private function formatWhere($where)
     {
+        $parameter = [];
+
         if(is_numeric($where)){
             $parameter['where'] = $where;
             $where = "`{$this->pk}`=:where";
@@ -405,7 +409,7 @@ class Mysql
      * @param $parameter
      * @return mixed|string
      */
-    private function bindParameter($sql, $parameter)
+    private function bindParameter($sql, $parameter = [])
     {
         $sql = trim($sql);
 
@@ -442,6 +446,13 @@ class Mysql
 
     public function __destruct()
     {
+        $message = "";
+        foreach ($this->runSqlArray as $value) {
+            $message .= "{$value}\r\n";
+        }
+        Log::info($message);
+
         mysqli_close($this->db_conn);
     }
+
 }

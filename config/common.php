@@ -8,7 +8,7 @@
 function json_ok($data = [], $msg = '')
 {
     $result = [
-        'code' => 200,
+        'code' => 0,
         'msg'  => $msg??'ok',
         'data' => $data
     ];
@@ -18,7 +18,7 @@ function json_ok($data = [], $msg = '')
 function json_no($msg = '', $data = [])
 {
     $result = [
-        'code' => 400,
+        'code' => -1,
         'msg'  => $msg??'error',
     ];
     if($data)$result['data'] = $data;

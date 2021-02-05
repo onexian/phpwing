@@ -2,11 +2,13 @@
 
 /**
  * 核心加载
+ *
  * User: wx
  * Date: 2018/12/6
  * Time: 11:03
  */
 namespace wing;
+
 require ROOT . '/phpwing/global.php';
 require_once ROOT . '/vendor/autoload.php'; // 加载composer类加载器
 require ROOT . '/phpwing/helper.php'; // 助手函数库
@@ -40,16 +42,16 @@ class Loader
      */
     private static function autoload($class)
     {
-
         $file = self::findFile($class);
         if (file_exists($file)) {
             include $file;
             return true;
         }
 
-        $msg = "自动加载{$class}时，文件{$file}不存在";
-        Debug::error($msg);
-        if (Debug::check()) throw new \Exception($msg);
+        if (is_debug()) {
+            $msg = "自动加载{$class}时，文件{$file}不存在";
+            throw new \Exception($msg);
+        }
         return false;
     }
 
@@ -70,19 +72,19 @@ class Loader
     {
         if(config('open_route')){
             // 加载app路由目录
-            $pathFiles = lib('file')::getList(ROUTE_DIR . APP_NAME, true, true);
+            $pathFiles = lib('file')->getList(ROUTE_DIR . APP_NAME, true, true);
             foreach($pathFiles as $item){
                 require_once $item;
             }
 
         }
 
-        $ct = request()::controller();
-        $ac = request()::action();
+        $ct = request()->controller();
+        $ac = request()->action();
 
         if (!preg_match("/^[a-z]+[a-z_.0-9]+$/i", $ct)) {
             // 非法的ct
-            $ct = 'Index';
+            $ct = 'index';
         }
         if (!preg_match("/^[a-z]+[a-z_0-9]+$/i", $ac)) {
             // 非法的ac
@@ -94,19 +96,21 @@ class Loader
 
         //判断控制器是否存在
         if (!is_object($controllerObj)) {
-            $msg = "控制器{$ct}无法自动加载";
-            Debug::error($msg);
-            if (Debug::check()) throw new \Exception($msg);
-            wing('response')::code(404)->send();
+            if (is_debug()){
+                $msg = "控制器{$ct}无法自动加载";
+                throw new \Exception($msg);
+            }
+            wing('response')->code(404)->send();
             exit;
         }
 
         //判断控制器的方法是否存在
         if (!method_exists($controllerObj, $ac)) {
-            $msg = "控制器{$ct}方法{$ac}不存在无法自动加载";
-            Debug::error($msg);
-            if (Debug::check()) throw new \Exception($msg);
-            wing('response')::code(404)->send();
+            if (is_debug()){
+                $msg = "{$ct}控制器,{$ac}方法不存在无法自动加载";
+                throw new \Exception($msg);
+            }
+            wing('response')->code(404)->send();
             exit;
         }
 
@@ -115,6 +119,7 @@ class Loader
 
     /**
      * 解析应用类的类名
+     *
      * @param string $layer 层名 controller model ...
      * @param string $name 类名
      * @return string
@@ -132,6 +137,7 @@ class Loader
     /**
      * 字符串命名风格转换
      * type 0 将Java风格转换为C的风格 1 将C风格转换为Java的风格
+     *
      * @param string $name 字符串
      * @param integer $type 转换类型
      * @param bool $ucfirst 首字母是否大写（驼峰规则）

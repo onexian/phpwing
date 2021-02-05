@@ -30,31 +30,32 @@ class Request
 
     public function __construct()
     {
-        $path = $this->getInput('get.'.URL_INFO)?:'';
+        $path = $this->getInput('get.' . URL_INFO) ?: '';
         if (is_string($path)) {
-            // trim($path, DS) . DS 后面加 DS 是确保最少可以切分出两个字符串， 2 是 为了限制最多只能分割为2个字符
-            list($controller, $action) = explode(DS, trim($path, DS) . DS, 2);
+            // 2 是 为了限制最多只能分割为2个字符
+            list($controller, $action) = explode(DS, trim($path, DS), 2);
         }
 
         // 获取控制器名
-        $controller = strip_tags($controller ?: $this->getInput('get.'.CT) ?: 'Index');
+        $controller = strip_tags($controller ?: $this->getInput('get.' . CT) ?: 'index');
         // 当前方法名
-        $action = strip_tags($action ?: $this->getInput('get.'.AC) ?: 'index');
+        $action = strip_tags($action ?: $this->getInput('get.' . AC) ?: 'index');
 
-        if(config('open_route')){
+        if (config('open_route')) {
             // 可省略 action 等于 index 的情况
-            $rulePath = ('index' == $action) ? $controller : $controller .DS. $action;
-            list($controller, $action) = lib('route')::getRule($rulePath, $this->method());
+            $rulePath = ('index' == $action) ? $controller : $controller . DS . $action;
+            list($controller, $action) = lib('route')->getRule($rulePath, $this->method());
         }
 
         $this->controller = $controller;
-        $this->action = $action;
+        $this->action     = $action;
     }
 
     /**
      * 设置当前的控制器名
+     *
      * @access public
-     * @param  string $controller 控制器名
+     * @param string $controller 控制器名
      * @return $this
      */
     public function setController(string $controller)
@@ -65,8 +66,9 @@ class Request
 
     /**
      * 设置当前的操作名
+     *
      * @access public
-     * @param  string $action 操作名
+     * @param string $action 操作名
      * @return $this
      */
     public function setAction(string $action)
@@ -77,11 +79,12 @@ class Request
 
     /**
      * 获取当前的控制器名
+     *
      * @access public
-     * @param  bool $convert 转换为小写
+     * @param bool $convert 转换为小写
      * @return string
      */
-    public function controller($ct = '',bool $convert = false): string
+    public function controller($ct = '', bool $convert = false): string
     {
         $name = $this->controller ?: '';
         return $convert ? strtolower($name) : $name;
@@ -89,8 +92,9 @@ class Request
 
     /**
      * 获取当前的操作名
+     *
      * @access public
-     * @param  bool $convert 转换为小写
+     * @param bool $convert 转换为小写
      * @return string
      */
     public function action($ac = '', bool $convert = false): string
@@ -227,6 +231,7 @@ class Request
 
     /**
      * 递归过滤给定的值
+     *
      * @param mixed $value 键值
      * @param mixed $key 键名
      * @param array $filters 过滤方法+默认值
@@ -263,6 +268,7 @@ class Request
 
     /**
      * 过滤表单中的表达式
+     *
      * @param string $value
      * @return void
      */
@@ -277,6 +283,7 @@ class Request
 
     /**
      * 强制类型转换
+     *
      * @param string $data
      * @param string $type
      * @return mixed
@@ -313,6 +320,7 @@ class Request
 
     /**
      * 检测是否使用手机访问
+     *
      * @access public
      * @return bool
      */
@@ -333,8 +341,9 @@ class Request
 
     /**
      * 当前的请求类型
+     *
      * @access public
-     * @param bool $method  true 获取原始请求类型
+     * @param bool $method true 获取原始请求类型
      * @return string
      */
     public function method($method = false)
@@ -355,6 +364,7 @@ class Request
 
     /**
      * 是否为GET请求
+     *
      * @access public
      * @return bool
      */
@@ -365,6 +375,7 @@ class Request
 
     /**
      * 是否为POST请求
+     *
      * @access public
      * @return bool
      */
@@ -389,8 +400,8 @@ class Request
                     } else {
                         $ip = "unknown";
                     }
-        $preg="/\A((([0-9]?[0-9])|(1[0-9]{2})|(2[0-4][0-9])|(25[0-5]))\.){3}(([0-9]?[0-9])|(1[0-9]{2})|(2[0-4][0-9])|(25[0-5]))\Z/";
-        if(preg_match($preg,$ip)){
+        $preg = "/\A((([0-9]?[0-9])|(1[0-9]{2})|(2[0-4][0-9])|(25[0-5]))\.){3}(([0-9]?[0-9])|(1[0-9]{2})|(2[0-4][0-9])|(25[0-5]))\Z/";
+        if (preg_match($preg, $ip)) {
             return ($ip);
         }
     }

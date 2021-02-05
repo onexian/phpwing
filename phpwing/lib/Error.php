@@ -26,11 +26,12 @@ class Error
         if($errno == E_WARNING ){
             $type = 'warn';
         }
+
         if($errno == E_NOTICE){
             return true;
         }
 
-        Log::save($type , $errstr, $errfile, $errline);
+        Log::save($type, $errstr, $errfile, $errline);
     }
 
     public static function appException($e)
@@ -38,7 +39,7 @@ class Error
         echo '<pre>';
         $errArr = [
             '错误码' => $e->getCode(),
-            '路径' => $e->getMessage(),
+            '内容' => $e->getMessage(),
             '文件' => $e->getFile(),
             '行号' => $e->getLine(),
         ];
@@ -49,8 +50,6 @@ class Error
 
     public static function appShutdown()
     {
-        //echo "<hr>";
-        //print_r("ALL END");
-        //echo "<script type='text/javascript'>console.log('aaa');</script>";
+        Log::end();
     }
 }

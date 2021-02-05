@@ -18,6 +18,7 @@ class User extends Mysql
     public function addCookie($uid,$username,$salt,$email,$pass,$type,$expire="1",$userdid='')
     {
 
+        return 1111;
         $expire_date=intval($expire) * 86400;
         lib('cookie')::set("uid",$uid,$expire_date);
         lib('cookie')::set("shell",md5($username.$pass.$salt), $expire_date);

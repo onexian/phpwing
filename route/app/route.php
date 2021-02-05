@@ -8,7 +8,7 @@
 
 lib('route')::get('login', 'auth/login')
     ->post('login', 'auth/login')
-    ->get('aaa/bbb', 'index/index')
+    ->get('index/bbb', 'index/index')
     ->get('parseadld', 'command.ParseAdLd/index')
 
 ;

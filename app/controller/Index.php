@@ -14,6 +14,8 @@ class Index
     public function index()
     {
 
-        return json_ok(['a'=>'b']);
     }
+
+
+
 }

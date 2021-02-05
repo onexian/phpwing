@@ -29,4 +29,8 @@ class Facade
         return call_user_func_array([static::createFacade(), $method], $params);
     }
 
+    public function __call($method, $params)
+    {
+        return call_user_func_array([static::createFacade(), $method], $params);
+    }
 }

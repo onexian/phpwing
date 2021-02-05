@@ -1,6 +1,8 @@
 <?php
 declare (strict_types = 1);
 namespace wing\lib;
+
+
 /**
  *
  * FILE_NAME: Route.php
@@ -24,18 +26,31 @@ class Route
      * @param  mixed  $route  路由地址
      * @param  string $method 请求类型
      */
-    public function addRule(string $rule, $route = null, string $method = '*')
+    private function addRule(string $rule, $route = null, string $method = '*')
     {
-        $rule = DS != $rule ? trim($rule, DS) : '';
-        $this->rules[APP_NAME . "_{$method}"][$rule] = $route;
+        $this->rules[$this->getRulesKey($method)][$this->getRuleKeyPath($rule)] = $route;
     }
 
+    /**
+     * 添加get 路由
+     *
+     * @param string $rule
+     * @param null $route
+     * @return $this
+     */
     public function get(string $rule, $route = null)
     {
         $this->addRule($rule,$route, 'get');
         return $this;
     }
 
+    /**
+     * 添加post 路由
+     *
+     * @param string $rule
+     * @param null $route
+     * @return $this
+     */
     public function post(string $rule, $route = null)
     {
         $this->addRule($rule,$route, 'post');
@@ -51,10 +66,38 @@ class Route
      */
     public function getRule($rule, $method= '*')
     {
-        $path = $this->rules[APP_NAME . strtolower("_{$method}")][$rule] ?? '';
+
+        $path = $this->rules[$this->getRulesKey($method)][$this->getRuleKeyPath($rule)] ?? '';
+
         if(empty($path)){ // 不匹配直接 抛出 404
-            wing('response')::code(404)->send();
+
+            if (is_debug()) throw new \Exception("路由不匹配");
+
+            wing('response')->code(404)->send();
         }
         return explode(DS, $path, 2);
+    }
+
+    /**
+     * 获取设置或搜索路由数组的 key
+     *
+     * @param $method
+     * @return string
+     */
+    private function getRulesKey($method)
+    {
+        return APP_NAME . strtolower("_{$method}");
+    }
+
+    /**
+     * 获取设置或搜索的ct与ac 组成的路径
+     *
+     * @param $rule
+     * @return string
+     */
+    private function getRuleKeyPath($rule)
+    {
+        return DS != $rule ? trim($rule, DS) : '';
+
     }
 }

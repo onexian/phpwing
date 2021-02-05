@@ -23,6 +23,16 @@ return [
     ],
 
     // 是否使用路由
-    'open_route' => true,
+    'open_route' => false, // true,false
+
+    // 模板参数配置
+    'view' => [
+        // 是否使用缓存机制进行工作
+        'cache_enable' => false,
+        // 超过缓存时间则自动更新缓存。0 永远不过期；> 0 判断过期；< 0 始终过期；
+        'cache_expire' => 30, // 秒
+        // 模板后缀
+        'ext' => 'htm'
+    ],
 
 ];

@@ -12,66 +12,113 @@ namespace wing\lib;
 class Log
 {
 
-    public static function save($type, $message, $errfile = null, $errline = null)
+    // 日志状态
+    const ERROR_LOG = 'error';
+    const DEBUG_LOG = 'debug';
+    const INFO_LOG  = 'info';
+
+    protected static $allMessage = [];
+
+    public static function save($type, string $message, $errfile = null, $errline = null)
     {
+
+        self::$allMessage[$type][] = [
+            'file' => $errfile,
+            'line' => $errline,
+            'message' => $message,
+        ];
+
+        return true;
+
+    }
+
+    public static function end()
+    {
+
         //设置目录
-        $logPath = RUNTIME_DIR . 'log' . DS. date('Ym') . DS;
+        $logDir = RUNTIME_DIR . 'log' . DS. date('Ym') . DS;
 
         // 检查日志目录是否可写
-        if (!file_exists($logPath)) {
-            @mkdir($logPath, 0755, true);
+        if (!file_exists($logDir)) {
+            @mkdir($logDir, 0755, true);
         }
-        chmod($logPath, 0755);
+        chmod($logDir, 0755);
 
-        if (!is_writable($logPath)) exit($logPath . ' is not writeable !');
-        $thisDay = date('Y_m_d');
-        $thisTime = date('[Y-m-d H:i:s]');
-
-        // 根据类型设置日志目标位置
-        switch ($type) {
-            case 'debug':
-                $logPath .= 'Debug_' . $thisDay . '.log';
-                break;
-            case 'error':
-                $logPath .= 'Err_' . $thisDay . '.log';
-                break;
-            case 'log':
-                $logPath .= 'Log_' . $thisDay . '.log';
-                break;
-            default:
-                $logPath .= 'Log_' . $thisDay . '.log';
-                break;
+        // 是否可写
+        if (!is_writable($logDir)) {
+            throw new \Exception("{$logDir} 日志不可写");
         }
 
         clearstatcache();
 
-        // 写日志, 返回成功与否
-        $content = "\r\n-----------------------------------\r\n";
+        foreach (self::$allMessage as $key=>$value) {
 
-        if(empty($errfile) && !IS_CLI){
-            $errfile = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-        }
+            // 内容
+            $content = date('[Y-m-d H:i:s]') . ucfirst($key) . "\r\n";
 
-        $content .= "{$thisTime}" . ucfirst($type) . ": {$errfile} {$errline}\r\n";
+            foreach ($value as $_v) {
 
-        if(!empty($_POST)){
-            $_save = array();
-            foreach($_POST as $name => $value){
-                if(is_string($value) && strlen($value) > 200){
-                    $_save[$name] = substr($value, 0, 200) . '...[LONG TEXT]';
-                }else{
-                    $_save[$name] = $value;
+                $errfile = $_v['file'] ?? '';
+                $errline = $_v['line'] ?? '';
+                $message = $_v['message'] ?? '';
+
+                if(empty($errfile) && !IS_CLI){
+                    $errfile = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
                 }
+
+                $content .= "[file: {$errfile}] [line: {$errline}]\r\n";
+                $content .= "{$message}\r\n";
+
             }
-            $content .= "\r\nPOST: " . var_export($_save, true);
-        }
-        if(!empty($_COOKIE)){
-            $content .= "\r\nCOOKIE: " . var_export($_COOKIE, true);
+
+            $day = date('d');
+
+            // 根据类型设置日志目标位置
+            switch ($key) {
+                case self::DEBUG_LOG:
+                    $logPath = $day . '_debug.log';
+                    break;
+                case self::ERROR_LOG:
+                    $logPath = $day . '_error.log';
+                    break;
+                case self::INFO_LOG:
+                    $logPath = $day . '_info.log';
+                    break;
+                default:
+                    $logPath = $day . '_info.log';
+                    break;
+            }
+
+            error_log($content, 3, $logDir . $logPath);
+
         }
 
-        $content .= "{$message}\r\n";
+        return true;
 
-        return error_log($content, 3, $logPath);
+    }
+
+    public static function __callStatic($method, $params)
+    {
+        if (!in_array($method, [self::DEBUG_LOG, self::ERROR_LOG, self::INFO_LOG])) {
+            throw new \Exception("class ". __CLASS__ ." does not have a method '{$method}'");
+        }
+
+        $traces = debug_backtrace();
+        $errfile = $traces[0]['file'] ?? '';
+        $errline = $traces[0]['line'] ?? '';
+        return self::save($method, implode(', ', $params), $errfile, $errline);
+    }
+
+    public function __call($method, $params)
+    {
+        if (!in_array($method, [self::DEBUG_LOG, self::ERROR_LOG, self::INFO_LOG])) {
+            throw new \Exception("class ". __CLASS__ ." does not have a method '{$method}'");
+        }
+
+        $traces = debug_backtrace();
+        $errfile = $traces[0]['file'] ?? '';
+        $errline = $traces[0]['line'] ?? '';
+        return self::save($method, implode(', ', $params), $errfile, $errline);
     }
 
 }
